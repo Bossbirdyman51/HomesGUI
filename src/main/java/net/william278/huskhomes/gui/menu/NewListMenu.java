@@ -137,15 +137,24 @@ public class NewListMenu extends Menu {
                 plugin.getLogger().info("Attempting to delete home: " + home.getName());
                 api.deleteHome(home);
                 plugin.getLogger().info("Home deletion successful");
-                api.getUserHomes(owner).thenAccept(updatedHomes -> {
-                    plugin.getLogger().info("Got " + updatedHomes.size() + " homes after deletion");
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                
+                // Fermer le menu de confirmation
+                click.getGui().close();
+                
+                // Attendre un court instant pour la synchronisation
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    // Puis récupérer la liste mise à jour
+                    api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                        plugin.getLogger().info("Got " + updatedHomes.size() + " homes after deletion");
+                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                            // Rouvrir le menu principal avec les données à jour
+                            NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                        });
+                    }).exceptionally(e -> {
+                        plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list after deletion", e);
+                        return null;
                     });
-                }).exceptionally(e -> {
-                    plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list after deletion", e);
-                    return null;
-                });
+                }, 10L); // Délai de 10 ticks (0.5 seconde)
             } catch (ValidationException e) {
                 plugin.getLogger().log(Level.SEVERE, "Failed to delete home", e);
             }
@@ -204,28 +213,36 @@ public class NewListMenu extends Menu {
                                 .text(plugin.getLocales().getLocale("add_home_default_name"))
                                 .itemLeft(new ItemStack(Material.OAK_SIGN))
                                 .plugin(plugin)
-                                .onClose(p -> this.show(user))
                                 .onClick((slot, state) -> {
                                     if (slot == AnvilGUI.Slot.OUTPUT) {
                                         try {
                                             plugin.getLogger().info("Attempting to create home: " + state.getText());
                                             api.createHome(owner, state.getText(), user.getPosition());
                                             plugin.getLogger().info("Home creation successful");
-                                            return Arrays.asList(
-                                                AnvilGUI.ResponseAction.close(),
-                                                AnvilGUI.ResponseAction.run(() -> {
-                                                    plugin.getLogger().info("Fetching updated homes list");
-                                                    api.getUserHomes(owner).thenAccept(updatedHomes -> {
-                                                        plugin.getLogger().info("Got " + updatedHomes.size() + " homes");
-                                                        plugin.getServer().getScheduler().runTask(plugin, () -> {
-                                                            NewListMenu.create(plugin, updatedHomes, owner).show(user);
-                                                        });
-                                                    }).exceptionally(e -> {
-                                                        plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list", e);
-                                                        return null;
-                                                    });
-                                                })
+                                            
+                                            // Afficher un message de chargement
+                                            List<AnvilGUI.ResponseAction> actions = Collections.singletonList(
+                                                AnvilGUI.ResponseAction.replaceInputText("Création en cours...")
                                             );
+                                            
+                                            // Attendre un court instant pour la synchronisation
+                                            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                                                plugin.getLogger().info("Fetching updated homes list");
+                                                api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                                                    plugin.getLogger().info("Got " + updatedHomes.size() + " homes");
+                                                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                                        // Fermer l'interface AnvilGUI
+                                                        state.getPlayer().closeInventory();
+                                                        // Rouvrir le menu avec les données à jour
+                                                        NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                                                    });
+                                                }).exceptionally(e -> {
+                                                    plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list", e);
+                                                    return null;
+                                                });
+                                            }, 10L); // Délai de 10 ticks (0.5 seconde)
+                                            
+                                            return actions;
                                         } catch (ValidationException e) {
                                             return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(plugin.getLocales().getLocale("error_invalid_name")));
                                         }
