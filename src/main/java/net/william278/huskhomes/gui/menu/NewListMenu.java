@@ -35,9 +35,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 
 import static net.william278.huskhomes.gui.config.Locales.textWrap;
 
@@ -151,7 +153,7 @@ public class NewListMenu extends Menu {
             final ItemStack icon = new ItemStack(Material.ENDER_PEARL);
             final ItemMeta meta = icon.getItemMeta();
             if (mode == MenuMode.TELEPORT) {
-                meta.addEnchant(Enchantment.DURABILITY, 1, true);
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             }
             icon.setItemMeta(meta);
@@ -168,7 +170,7 @@ public class NewListMenu extends Menu {
             final ItemStack icon = new ItemStack(Material.BARRIER);
             final ItemMeta meta = icon.getItemMeta();
             if (mode == MenuMode.DELETE) {
-                meta.addEnchant(Enchantment.DURABILITY, 1, true);
+                meta.addEnchant(Enchantment.UNBREAKING, 1, true);
                 meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
             }
             icon.setItemMeta(meta);
@@ -197,10 +199,22 @@ public class NewListMenu extends Menu {
                                     if (slot == AnvilGUI.Slot.OUTPUT) {
                                         try {
                                             api.createHome(owner, state.getText(), user.getPosition());
+                                            return Arrays.asList(
+                                                AnvilGUI.ResponseAction.close(),
+                                                AnvilGUI.ResponseAction.run(() -> {
+                                                    api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                                                        plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                                            NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                                                        });
+                                                    }).exceptionally(e -> {
+                                                        plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list", e);
+                                                        return null;
+                                                    });
+                                                })
+                                            );
                                         } catch (ValidationException e) {
                                             return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(plugin.getLocales().getLocale("error_invalid_name")));
                                         }
-                                        return Collections.singletonList(AnvilGUI.ResponseAction.close());
                                     }
                                     return Collections.emptyList();
                                 })
