@@ -134,11 +134,21 @@ public class NewListMenu extends Menu {
         gui.setCloseAction(close -> false);
         gui.addElement(new StaticGuiElement('c', new ItemStack(Material.LIME_WOOL), click -> {
             try {
+                plugin.getLogger().info("Attempting to delete home: " + home.getName());
                 api.deleteHome(home);
+                plugin.getLogger().info("Home deletion successful");
+                api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                    plugin.getLogger().info("Got " + updatedHomes.size() + " homes after deletion");
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                    });
+                }).exceptionally(e -> {
+                    plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list after deletion", e);
+                    return null;
+                });
             } catch (ValidationException e) {
-                // Ignore, cannot be deleted
+                plugin.getLogger().log(Level.SEVERE, "Failed to delete home", e);
             }
-            this.show(user);
             return true;
         }, plugin.getLocales().getLocale("delete_confirm_button")));
         gui.addElement(new StaticGuiElement('n', new ItemStack(Material.RED_WOOL), click -> {
@@ -198,11 +208,15 @@ public class NewListMenu extends Menu {
                                 .onClick((slot, state) -> {
                                     if (slot == AnvilGUI.Slot.OUTPUT) {
                                         try {
+                                            plugin.getLogger().info("Attempting to create home: " + state.getText());
                                             api.createHome(owner, state.getText(), user.getPosition());
+                                            plugin.getLogger().info("Home creation successful");
                                             return Arrays.asList(
                                                 AnvilGUI.ResponseAction.close(),
                                                 AnvilGUI.ResponseAction.run(() -> {
+                                                    plugin.getLogger().info("Fetching updated homes list");
                                                     api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                                                        plugin.getLogger().info("Got " + updatedHomes.size() + " homes");
                                                         plugin.getServer().getScheduler().runTask(plugin, () -> {
                                                             NewListMenu.create(plugin, updatedHomes, owner).show(user);
                                                         });
