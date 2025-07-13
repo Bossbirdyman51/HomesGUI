@@ -45,7 +45,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
 
     private final T position;
     private final Type type;
-    private final ListMenu<T> parentMenu;
+    private final Menu parentMenu;
     private final int pageNumber;
 
     @NotNull
@@ -57,7 +57,7 @@ public class EditMenu<T extends SavedPosition> extends Menu {
         };
     }
 
-    private EditMenu(@NotNull HuskHomesGui plugin, @NotNull T position, @NotNull ListMenu<T> parentMenu, int pageNumber) {
+    private EditMenu(@NotNull HuskHomesGui plugin, @NotNull T position, @NotNull Menu parentMenu, int pageNumber) {
         super(plugin, plugin.getLocales().getLocale(
                         position instanceof Home ? "home_editor_title" : "warp_editor_title", position.getName()),
                 getEditMenuLayout());
@@ -68,13 +68,13 @@ public class EditMenu<T extends SavedPosition> extends Menu {
     }
 
     public static EditMenu<Home> home(@NotNull HuskHomesGui plugin, @NotNull Home home,
-                                      @NotNull ListMenu<Home> parentMenu,
+                                      @NotNull Menu parentMenu,
                                       int pageNumber) {
         return new EditMenu<>(plugin, home, parentMenu, pageNumber);
     }
 
     public static EditMenu<Warp> warp(@NotNull HuskHomesGui plugin, @NotNull Warp warp,
-                                      @NotNull ListMenu<Warp> parentMenu,
+                                      @NotNull Menu parentMenu,
                                       int pageNumber) {
         return new EditMenu<>(plugin, warp, parentMenu, pageNumber);
     }

@@ -22,7 +22,8 @@ package net.william278.huskhomes.gui.listener;
 import net.william278.huskhomes.event.HomeListEvent;
 import net.william278.huskhomes.event.WarpListEvent;
 import net.william278.huskhomes.gui.HuskHomesGui;
-import net.william278.huskhomes.gui.menu.ListMenu;
+import net.william278.huskhomes.gui.menu.NewListMenu;
+import net.william278.huskhomes.gui.menu.WarpListMenu;
 import net.william278.huskhomes.position.Home;
 import net.william278.huskhomes.user.OnlineUser;
 import org.bukkit.event.EventHandler;
@@ -44,17 +45,15 @@ public class ListListener implements Listener {
         }
 
         event.setCancelled(true);
-        final ListMenu<Home> menu;
         if (event.getIsPublicHomeList()) {
-            menu = ListMenu.publicHomes(plugin, event.getHomes());
+            NewListMenu.createPublic(plugin, event.getHomes(), onlineUser).show(onlineUser);
         } else {
-            menu = ListMenu.homes(plugin, event.getHomes(),
+            NewListMenu.create(plugin, event.getHomes(),
                     event.getHomes().stream()
                             .findFirst()
                             .map(Home::getOwner)
-                            .orElse(onlineUser));
+                            .orElse(onlineUser)).show(onlineUser);
         }
-        menu.show(onlineUser);
     }
 
     // When the warp list is viewed
@@ -65,7 +64,7 @@ public class ListListener implements Listener {
         }
 
         event.setCancelled(true);
-        ListMenu.warps(plugin, event.getWarps()).show(onlineUser);
+        WarpListMenu.create(plugin, event.getWarps()).show(onlineUser);
     }
 
 }
