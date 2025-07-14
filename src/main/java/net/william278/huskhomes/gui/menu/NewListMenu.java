@@ -274,8 +274,9 @@ public class NewListMenu extends Menu {
                                 .onClick((slot, state) -> {
                                     if (slot == AnvilGUI.Slot.OUTPUT) {
                                         try {
-                                            plugin.getLogger().info("Attempting to create home: " + state.getText());
-                                            api.createHome(owner, state.getText(), user.getPosition());
+                                            String homeName = state.getText().replace(' ', '_');
+                                            plugin.getLogger().info("Attempting to create home with formatted name: " + homeName);
+                                            api.createHome(owner, homeName, user.getPosition());
                                             plugin.getLogger().info("Home creation successful");
                                             
                                             // Afficher un message de chargement
