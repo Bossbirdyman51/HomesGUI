@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -48,23 +49,30 @@ public class NewListMenu extends Menu {
     private final List<Home> homes;
     private final User owner;
     private MenuMode mode = MenuMode.TELEPORT;
+    private final SortMode sortMode;
     private final boolean addHomeButton;
 
-    private NewListMenu(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner, @NotNull String title, boolean addHomeButton) {
+    private NewListMenu(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner, @NotNull String title, boolean addHomeButton, @NotNull SortMode sortMode) {
         super(plugin, title, getMenuLayout(plugin));
         this.homes = homes;
         this.owner = owner;
         this.addHomeButton = addHomeButton;
+        this.sortMode = sortMode;
     }
 
     @NotNull
     public static NewListMenu create(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner) {
-        return new NewListMenu(plugin, homes, owner, plugin.getLocales().getLocale("homes_menu_title", owner.getUsername()), true);
+        return new NewListMenu(plugin, homes, owner, plugin.getLocales().getLocale("homes_menu_title", owner.getUsername()), true, SortMode.ALPHABETICAL_ASCENDING);
+    }
+
+    @NotNull
+    public static NewListMenu create(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner, @NotNull SortMode sortMode) {
+        return new NewListMenu(plugin, homes, owner, plugin.getLocales().getLocale("homes_menu_title", owner.getUsername()), true, sortMode);
     }
 
     @NotNull
     public static NewListMenu createPublic(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User viewer) {
-        return new NewListMenu(plugin, homes, viewer, plugin.getLocales().getLocale("public_homes_menu_title"), false);
+        return new NewListMenu(plugin, homes, viewer, plugin.getLocales().getLocale("public_homes_menu_title"), false, SortMode.ALPHABETICAL_ASCENDING);
     }
 
     @NotNull
@@ -74,7 +82,7 @@ public class NewListMenu extends Menu {
         for (int i = 0; i < rows - 1; i++) {
             layout[i] = "hhhhhhhhh";
         }
-        layout[rows - 1] = "<famsf>";
+        layout[rows - 1] = "<maosf>";
         return layout;
     }
 
@@ -87,6 +95,11 @@ public class NewListMenu extends Menu {
                 menu.setFiller(new ItemStack(plugin.getSettings().getHomesFillerItem()));
             }
 
+            homes.sort(Comparator.comparing(home -> home.getMeta().getName()));
+            if (sortMode == SortMode.ALPHABETICAL_DESCENDING) {
+                Collections.reverse(homes);
+            }
+
             final GuiElementGroup homeGroup = new GuiElementGroup('h');
             homes.forEach(home -> homeGroup.addElement(createHomeButton(home)));
             menu.addElement(homeGroup);
@@ -96,13 +109,16 @@ public class NewListMenu extends Menu {
 
             menu.addElement(createTeleportButton());
             menu.addElement(createDeleteButton());
+            menu.addElement(createSortButton());
             if (addHomeButton) {
                 menu.addElement(createAddButton());
             }
+            menu.setElement(50, createHomeCountElement());
         };
     }
 
     private DynamicGuiElement createHomeButton(@NotNull Home home) {
+        plugin.getLogger().info("Creating home button for: " + home.getName() + " at " + home.getX() + "," + home.getY() + "," + home.getZ());
         return new DynamicGuiElement('h', (viewer) -> new StaticGuiElement('h',
                 new ItemStack(getPositionMaterial(home).orElse(plugin.getSettings().getDefaultIcon())),
                 click -> {
@@ -121,14 +137,18 @@ public class NewListMenu extends Menu {
                     }
                     return true;
                 },
-                plugin.getLocales().getLocale("item_name", home.getName()),
+                "§b" + home.getName(),
                 plugin.getLocales().getLocale(
                         "item_description",
                         !home.getMeta().getDescription().isBlank() ?
                                 textWrap(plugin, home.getMeta().getDescription()) :
                                 plugin.getLocales().getLocale("item_description_blank")
                 ),
-                plugin.getLocales().getLocale("home_mode_lore_" + mode.name().toLowerCase())
+                "",
+                "§7Coordonnées : §e" + String.format("X: %.1f, Y: %.1f, Z: %.1f", home.getX(), home.getY(), home.getZ()),
+                "§7Serveur : §e" + home.getServer(),
+                "",
+                mode == MenuMode.TELEPORT ? "§7Cliquez pour vous téléporter" : "§cCliquez pour supprimer"
         ));
     }
 
@@ -275,8 +295,69 @@ public class NewListMenu extends Menu {
         );
     }
 
+    private GuiElement createHomeCountElement() {
+        return new DynamicGuiElement('f', viewer -> {
+            if (viewer instanceof Player player) {
+                final OnlineUser onlineUser = api.adaptUser(player);
+                plugin.getLogger().info("Attempting to get max homes for user: " + onlineUser.getUsername());
+                final int currentHomes = homes.size();
+                final int maxHomes = api.getMaxHomeSlots(onlineUser);
+                plugin.getLogger().info("Retrieved max homes: " + maxHomes + " for user: " + onlineUser.getUsername());
+
+                final ItemStack item = new ItemStack(Material.PLAYER_HEAD);
+                final ItemMeta meta = item.getItemMeta();
+
+                meta.setDisplayName("§bVos Homes");
+                meta.setLore(Collections.singletonList(
+                        "§f" + currentHomes + " / " + maxHomes
+                ));
+                item.setItemMeta(meta);
+
+                return new StaticGuiElement('f', item, click -> true);
+            }
+            return new StaticGuiElement('f', new ItemStack(Material.AIR));
+        });
+    }
+
+    private DynamicGuiElement createSortButton() {
+        return new DynamicGuiElement('o', (viewer) -> {
+            plugin.getLogger().info("Creating sort button with mode: " + sortMode);
+            final ItemStack icon = new ItemStack(Material.BARRIER);
+            final ItemMeta meta = icon.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName("§bTrier les homes");
+                final String sortDescription = sortMode == SortMode.ALPHABETICAL_ASCENDING ?
+                    "§7Tri actuel : §eA → Z" :
+                    "§7Tri actuel : §eZ → A";
+                meta.setLore(Arrays.asList(
+                    sortDescription,
+                    "§7Cliquez pour changer l'ordre"
+                ));
+                icon.setItemMeta(meta);
+                plugin.getLogger().info("Sort button meta set: " + meta.getDisplayName());
+            }
+            return new StaticGuiElement('o', icon, click -> {
+                if (click.getWhoClicked() instanceof Player player) {
+                    final OnlineUser user = api.adaptUser(player);
+                    final SortMode nextSortMode = this.sortMode.getNext();
+                    NewListMenu.create(plugin, homes, owner, nextSortMode).show(user);
+                }
+                return true;
+            });
+        });
+    }
+
     private enum MenuMode {
         TELEPORT,
         DELETE
+    }
+
+    private enum SortMode {
+        ALPHABETICAL_ASCENDING,
+        ALPHABETICAL_DESCENDING;
+
+        public SortMode getNext() {
+            return this == ALPHABETICAL_ASCENDING ? ALPHABETICAL_DESCENDING : ALPHABETICAL_ASCENDING;
+        }
     }
 }
