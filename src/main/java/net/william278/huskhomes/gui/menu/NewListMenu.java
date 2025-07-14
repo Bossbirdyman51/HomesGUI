@@ -117,6 +117,17 @@ public class NewListMenu extends Menu {
         };
     }
 
+    private String formatServerName(String serverName) {
+        switch (serverName.toLowerCase()) {
+            case "minage_survie_001":
+                return "Minage";
+            case "survie":
+                return "Survie";
+            default:
+                return serverName;
+        }
+    }
+
     private DynamicGuiElement createHomeButton(@NotNull Home home) {
         plugin.getLogger().info("Creating home button for: " + home.getName() + " at " + home.getX() + "," + home.getY() + "," + home.getZ());
         return new DynamicGuiElement('h', (viewer) -> new StaticGuiElement('h',
@@ -146,7 +157,7 @@ public class NewListMenu extends Menu {
                 ),
                 "",
                 "§7Coordonnées : §e" + String.format("X: %.1f, Y: %.1f, Z: %.1f", home.getX(), home.getY(), home.getZ()),
-                "§7Serveur : §e" + home.getServer(),
+                "§7Serveur : §e" + formatServerName(home.getServer()),
                 "",
                 mode == MenuMode.TELEPORT ? "§7Cliquez pour vous téléporter" : "§cCliquez pour supprimer"
         ));
@@ -322,7 +333,7 @@ public class NewListMenu extends Menu {
     private DynamicGuiElement createSortButton() {
         return new DynamicGuiElement('o', (viewer) -> {
             plugin.getLogger().info("Creating sort button with mode: " + sortMode);
-            final ItemStack icon = new ItemStack(Material.BARRIER);
+            final ItemStack icon = new ItemStack(Material.COMPARATOR);
             final ItemMeta meta = icon.getItemMeta();
             if (meta != null) {
                 meta.setDisplayName("§bTrier les homes");
