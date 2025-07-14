@@ -40,7 +40,7 @@ public class Settings {
 
     @YamlComment("Options for the home/warp list menu GUI")
     @YamlKey("menu.rows")
-    private int menuSize = 4;
+    private int menuSize = 6;
     @YamlKey("menu.show_controls")
     private boolean showMenuControls = true;
     @YamlKey("menu.display_controls_help_in_lore")
@@ -49,7 +49,7 @@ public class Settings {
     private int textWrapLength = 17;
 
     @YamlKey("menu.items.homes_filler")
-    private String homesFillerItem = "minecraft:orange_stained_glass_pane";
+    private String homesFillerItem = "minecraft:blue_stained_glass_pane";
     @YamlKey("menu.items.public_homes_filler")
     private String publicHomesFillerItem = "minecraft:lime_stained_glass_pane";
     @YamlKey("menu.items.warps_filler")
@@ -66,6 +66,28 @@ public class Settings {
     private String paginateLastPage = "minecraft:spectral_arrow";
     @YamlKey("menu.icons.controls_icon")
     private String controlsIcon = "minecraft:oak_sign";
+
+    @YamlKey("menu.icons.teleport_button")
+    private String teleportButton = "minecraft:ender_pearl";
+    @YamlKey("menu.icons.delete_button")
+    private String deleteButton = "minecraft:barrier";
+    @YamlKey("menu.icons.add_button")
+    private String addButton = "minecraft:oak_sign";
+    @YamlKey("menu.icons.edit_button")
+    private String editButton = "minecraft:writable_book";
+
+    @YamlKey("menu.items.delete_filler")
+    private String deleteFillerItem = "minecraft:red_stained_glass_pane";
+
+    @YamlComment("Sounds to be played on menu actions")
+    @YamlKey("menu.sounds.menu_open")
+    private String menuOpenSound = "BLOCK_AMETHYST_BLOCK_CHIME";
+    @YamlKey("menu.sounds.menu_close")
+    private String menuCloseSound = "BLOCK_AMETHYST_BLOCK_BREAK";
+    @YamlKey("menu.sounds.teleport")
+    private String teleportSound = "ENTITY_PLAYER_LEVELUP";
+    @YamlKey("menu.sounds.click")
+    private String clickSound = "UI_BUTTON_CLICK";
 
     @YamlComment("Options for the home/warp editor GUI")
     @YamlKey("editor.icons.home_editor_filler")
@@ -153,6 +175,51 @@ public class Settings {
     @NotNull
     public Material getControlsIcon() {
         return getMaterial(controlsIcon);
+    }
+
+    @NotNull
+    public Material getTeleportButton() {
+        return getMaterial(teleportButton);
+    }
+
+    @NotNull
+    public Material getDeleteButton() {
+        return getMaterial(deleteButton);
+    }
+
+    @NotNull
+    public Material getAddButton() {
+        return getMaterial(addButton);
+    }
+
+    @NotNull
+    public Material getEditButton() {
+        return getMaterial(editButton);
+    }
+
+    @NotNull
+    public Material getDeleteFillerItem() {
+        return getMaterial(deleteFillerItem);
+    }
+
+    @NotNull
+    public String getMenuOpenSound() {
+        return menuOpenSound;
+    }
+
+    @NotNull
+    public String getMenuCloseSound() {
+        return menuCloseSound;
+    }
+
+    @NotNull
+    public String getTeleportSound() {
+        return teleportSound;
+    }
+
+    @NotNull
+    public String getClickSound() {
+        return clickSound;
     }
 
     @NotNull

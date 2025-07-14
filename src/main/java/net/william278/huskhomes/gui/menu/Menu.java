@@ -28,6 +28,8 @@ import net.william278.huskhomes.position.SavedPosition;
 import net.william278.huskhomes.position.Warp;
 import net.william278.huskhomes.user.OnlineUser;
 import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -45,13 +47,21 @@ public abstract class Menu {
         this.plugin = plugin;
         this.api = HuskHomesAPI.getInstance();
         this.gui = new InventoryGui(plugin, title, layout);
+        this.gui.setCloseAction(close -> {
+            if (close.getPlayer() instanceof Player p) {
+                playSound(p, plugin.getSettings().getMenuCloseSound());
+            }
+            return true;
+        });
     }
 
     protected abstract Consumer<InventoryGui> buildMenu();
 
     public final void show(@NotNull OnlineUser user) {
         buildMenu().accept(gui);
-        gui.show(api.getPlayer(user));
+        final Player player = api.getPlayer(user);
+        gui.show(player);
+        playSound(player, plugin.getSettings().getMenuOpenSound());
     }
 
     public final void setPageNumber(@NotNull OnlineUser user, int pageNumber) {
@@ -113,11 +123,22 @@ public abstract class Menu {
 
         public Material getFillerMaterial(@NotNull Settings settings) {
             return switch (this) {
-                case HOME -> settings.getHomesFillerItem();
-                case PUBLIC_HOME -> settings.getPublicHomesFillerItem();
-                case WARP -> settings.getWarpsFillerItem();
+                case HOME:
+                    yield settings.getHomesFillerItem();
+                case PUBLIC_HOME:
+                    yield settings.getPublicHomesFillerItem();
+                case WARP:
+                    yield settings.getWarpsFillerItem();
             };
         }
     }
 
+    protected void playSound(@NotNull Player player, @NotNull String soundName) {
+        try {
+            Sound sound = Sound.valueOf(soundName.toUpperCase().replace(".", "_"));
+            player.playSound(player.getLocation(), sound, 1.0f, 1.0f);
+        } catch (IllegalArgumentException e) {
+            plugin.getLogger().warning("Invalid sound name: " + soundName);
+        }
+    }
 }

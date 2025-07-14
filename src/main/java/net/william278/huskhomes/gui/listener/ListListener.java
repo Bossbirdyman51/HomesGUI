@@ -44,6 +44,7 @@ public class ListListener implements Listener {
             return;
         }
 
+        plugin.getLogger().info("HomeListEvent intercepted, cancelling and showing GUI.");
         event.setCancelled(true);
         if (event.getIsPublicHomeList()) {
             NewListMenu.createPublic(plugin, event.getHomes(), onlineUser).show(onlineUser);

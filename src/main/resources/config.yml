@@ -1,0 +1,44 @@
+# ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+# ┃     HuskHomesGUI Config      ┃
+# ┃    Developed by William278   ┃
+# ┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+# ┗╸ Information: https://william278.net/project/huskhomesgui
+language: fr-fr
+menu:
+  # Options for the home/warp list menu GUI
+  rows: 6
+  show_controls: true
+  display_controls_help_in_lore: false
+  text_wrap_length: 17
+  items:
+    homes_filler: minecraft:blue_stained_glass_pane
+    public_homes_filler: minecraft:lime_stained_glass_pane
+    warps_filler: minecraft:cyan_stained_glass_pane
+    delete_filler: minecraft:red_stained_glass_pane
+    default_icon: minecraft:stone
+  icons:
+    paginate_first_page: minecraft:spectral_arrow
+    paginate_previous_page: minecraft:arrow
+    paginate_next_page: minecraft:arrow
+    paginate_last_page: minecraft:spectral_arrow
+    controls_icon: minecraft:oak_sign
+    teleport_button: minecraft:ender_pearl
+    delete_button: minecraft:barrier
+    add_button: minecraft:oak_sign
+    edit_button: minecraft:writable_book
+  sounds:
+    menu_open: BLOCK_AMETHYST_BLOCK_CHIME
+    menu_close: BLOCK_AMETHYST_BLOCK_BREAK
+    teleport: ENTITY_PLAYER_LEVELUP
+    click: UI_BUTTON_CLICK
+editor:
+  icons:
+    # Options for the home/warp editor GUI
+    home_editor_filler: minecraft:lime_stained_glass_pane
+    warp_editor_filler: minecraft:lime_stained_glass_pane
+    back_button: minecraft:orange_stained_glass_pane
+    edit_location_button: minecraft:oak_boat
+    edit_name_button: minecraft:name_tag
+    edit_description_button: minecraft:writable_book
+    edit_privacy_button: minecraft:nether_star
+    delete_button: minecraft:barrier

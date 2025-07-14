@@ -51,7 +51,7 @@ public class NewListMenu extends Menu {
     private final boolean addHomeButton;
 
     private NewListMenu(@NotNull HuskHomesGui plugin, @NotNull List<Home> homes, @NotNull User owner, @NotNull String title, boolean addHomeButton) {
-        super(plugin, title, getMenuLayout());
+        super(plugin, title, getMenuLayout(plugin));
         this.homes = homes;
         this.owner = owner;
         this.addHomeButton = addHomeButton;
@@ -68,18 +68,24 @@ public class NewListMenu extends Menu {
     }
 
     @NotNull
-    private static String[] getMenuLayout() {
-        return new String[]{
-                "hhhhhhhhh",
-                "hhhhhhhhh",
-                "<famsf>"
-        };
+    private static String[] getMenuLayout(@NotNull HuskHomesGui plugin) {
+        final int rows = plugin.getSettings().getMenuSize();
+        final String[] layout = new String[rows];
+        for (int i = 0; i < rows - 1; i++) {
+            layout[i] = "hhhhhhhhh";
+        }
+        layout[rows - 1] = "<famsf>";
+        return layout;
     }
 
     @Override
     protected Consumer<InventoryGui> buildMenu() {
         return (menu) -> {
-            menu.setFiller(new ItemStack(plugin.getSettings().getHomesFillerItem()));
+            if (mode == MenuMode.DELETE) {
+                menu.setFiller(new ItemStack(plugin.getSettings().getDeleteFillerItem()));
+            } else {
+                menu.setFiller(new ItemStack(plugin.getSettings().getHomesFillerItem()));
+            }
 
             final GuiElementGroup homeGroup = new GuiElementGroup('h');
             homes.forEach(home -> homeGroup.addElement(createHomeButton(home)));
@@ -169,7 +175,7 @@ public class NewListMenu extends Menu {
 
     private DynamicGuiElement createTeleportButton() {
         return new DynamicGuiElement('m', (viewer) -> {
-            final ItemStack icon = new ItemStack(Material.ENDER_PEARL);
+            final ItemStack icon = new ItemStack(plugin.getSettings().getTeleportButton());
             final ItemMeta meta = icon.getItemMeta();
             if (mode == MenuMode.TELEPORT) {
                 meta.addEnchant(Enchantment.UNBREAKING, 1, true);
@@ -177,7 +183,13 @@ public class NewListMenu extends Menu {
             }
             icon.setItemMeta(meta);
             return new StaticGuiElement('m', icon, click -> {
+                plugin.getLogger().info("Teleport mode button clicked");
                 this.mode = MenuMode.TELEPORT;
+                if (click.getWhoClicked() instanceof Player p) {
+                    playSound(p, plugin.getSettings().getClickSound());
+                }
+                plugin.getLogger().info("Updating menu display - Mode: " + this.mode);
+                click.getGui().setFiller(new ItemStack(plugin.getSettings().getHomesFillerItem()));
                 click.getGui().draw();
                 return true;
             }, plugin.getLocales().getLocale("teleport_mode_button"));
@@ -186,7 +198,7 @@ public class NewListMenu extends Menu {
 
     private DynamicGuiElement createDeleteButton() {
         return new DynamicGuiElement('s', (viewer) -> {
-            final ItemStack icon = new ItemStack(Material.BARRIER);
+            final ItemStack icon = new ItemStack(plugin.getSettings().getDeleteButton());
             final ItemMeta meta = icon.getItemMeta();
             if (mode == MenuMode.DELETE) {
                 meta.addEnchant(Enchantment.UNBREAKING, 1, true);
@@ -194,7 +206,13 @@ public class NewListMenu extends Menu {
             }
             icon.setItemMeta(meta);
             return new StaticGuiElement('s', icon, click -> {
+                plugin.getLogger().info("Delete mode button clicked");
                 this.mode = MenuMode.DELETE;
+                if (click.getWhoClicked() instanceof Player p) {
+                    playSound(p, plugin.getSettings().getClickSound());
+                }
+                plugin.getLogger().info("Updating menu display - Mode: " + this.mode);
+                click.getGui().setFiller(new ItemStack(plugin.getSettings().getDeleteFillerItem()));
                 click.getGui().draw();
                 return true;
             }, plugin.getLocales().getLocale("delete_mode_button"));
@@ -203,7 +221,7 @@ public class NewListMenu extends Menu {
 
     private StaticGuiElement createAddButton() {
         return new StaticGuiElement('a',
-                new ItemStack(Material.OAK_SIGN),
+                new ItemStack(plugin.getSettings().getAddButton()),
                 click -> {
                     if (click.getWhoClicked() instanceof Player player) {
                         final OnlineUser user = api.adaptUser(player);

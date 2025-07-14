@@ -46,7 +46,19 @@ public interface HuskHomesGuiPlugin {
     @NotNull
     default Settings loadSettings() {
         try {
-            return Annotaml.create(new File(getDataFolder(), "config.yml"), Settings.class).get();
+            final File configFile = new File(getDataFolder(), "config.yml");
+            if (!configFile.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                getDataFolder().mkdirs();
+                try (InputStream input = getResource("config.yml")) {
+                    if (input != null) {
+                        java.nio.file.Files.copy(input, configFile.toPath());
+                    } else {
+                        throw new IllegalStateException("Could not find config.yml in plugin resources");
+                    }
+                }
+            }
+            return Annotaml.create(configFile, Settings.class).get();
         } catch (InvocationTargetException | InstantiationException | IllegalAccessException | IOException e) {
             throw new IllegalStateException("Failed to load config file", e);
         }

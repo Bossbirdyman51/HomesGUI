@@ -65,7 +65,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 processResources {
-    filesMatching(['plugin.yml', 'fabric.mod.json']) {
+    filesMatching(['plugin.yml', 'fabric.mod.json', 'config.yml']) {
         expand(project.properties)
     }
 }
