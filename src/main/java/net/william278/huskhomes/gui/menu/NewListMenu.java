@@ -259,61 +259,101 @@ public class NewListMenu extends Menu {
         });
     }
 
-    private StaticGuiElement createAddButton() {
-        return new StaticGuiElement('a',
-                new ItemStack(plugin.getSettings().getAddButton()),
-                click -> {
-                    if (click.getWhoClicked() instanceof Player player) {
-                        final OnlineUser user = api.adaptUser(player);
-                        this.close(user);
-                        new AnvilGUI.Builder()
-                                .title(plugin.getLocales().getLocale("add_home_title"))
-                                .text(plugin.getLocales().getLocale("add_home_default_name"))
-                                .itemLeft(new ItemStack(Material.OAK_SIGN))
-                                .plugin(plugin)
-                                .onClick((slot, state) -> {
-                                    if (slot == AnvilGUI.Slot.OUTPUT) {
-                                        try {
-                                            String homeName = state.getText().replace(' ', '_');
-                                            plugin.getLogger().info("Attempting to create home with formatted name: " + homeName);
-                                            api.createHome(owner, homeName, user.getPosition());
-                                            plugin.getLogger().info("Home creation successful");
-                                            
-                                            // Afficher un message de chargement
-                                            List<AnvilGUI.ResponseAction> actions = Collections.singletonList(
-                                                AnvilGUI.ResponseAction.replaceInputText("Création en cours...")
+    private DynamicGuiElement createAddButton() {
+        return new DynamicGuiElement('a', viewer -> {
+            if (!(viewer instanceof Player player)) {
+                return new StaticGuiElement('a', new ItemStack(Material.AIR));
+            }
+
+            final OnlineUser user = api.adaptUser(player);
+            final int currentHomes = homes.size();
+            final int maxHomes = api.getMaxHomeSlots(user);
+            plugin.getLogger().info("Current homes: " + currentHomes + ", Max homes: " + maxHomes);
+
+            if (currentHomes >= maxHomes) {
+                // Utiliser une barrière pour indiquer la limite atteinte
+                plugin.getLogger().info("Setting limit reached icon");
+                ItemStack icon = new ItemStack(Material.RED_WOOL);
+                ItemMeta meta = icon.getItemMeta();
+                meta.setDisplayName("§cLimite de homes atteinte");
+                meta.setLore(Arrays.asList(
+                    "§7Vous avez atteint votre limite de homes",
+                    "§7Maximum : §e" + maxHomes + " homes"
+                ));
+                icon.setItemMeta(meta);
+                plugin.getLogger().info("Limit icon type: " + icon.getType());
+                return new StaticGuiElement('a', icon, click -> true);
+            }
+
+            // Sinon, afficher le bouton normal avec le nombre restant
+            plugin.getLogger().info("Setting normal add button");
+            ItemStack icon = new ItemStack(Material.EMERALD);
+            ItemMeta meta = icon.getItemMeta();
+            meta.setDisplayName("§aAjouter un home");
+            meta.setLore(Arrays.asList(
+                "§7Cliquez pour créer un nouveau home",
+                "§7Homes : §e" + currentHomes + "/" + maxHomes
+            ));
+            icon.setItemMeta(meta);
+            plugin.getLogger().info("Normal icon type: " + icon.getType());
+
+            return new StaticGuiElement('a', icon, click -> {
+                if (click.getWhoClicked() instanceof Player p) {
+                    final OnlineUser u = api.adaptUser(p);
+                    this.close(u);
+                    new AnvilGUI.Builder()
+                            .title(plugin.getLocales().getLocale("add_home_title"))
+                            .text(plugin.getLocales().getLocale("add_home_default_name"))
+                            .itemLeft(new ItemStack(Material.OAK_SIGN))
+                            .plugin(plugin)
+                            .onClick((slot, state) -> {
+                                if (slot == AnvilGUI.Slot.OUTPUT) {
+                                    try {
+                                        String inputText = state.getText();
+                                        if (inputText.length() > 16) {
+                                            return Collections.singletonList(
+                                                AnvilGUI.ResponseAction.replaceInputText("§cMax 16 caractères")
                                             );
-                                            
-                                            // Attendre un court instant pour la synchronisation
-                                            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                                                plugin.getLogger().info("Fetching updated homes list");
-                                                api.getUserHomes(owner).thenAccept(updatedHomes -> {
-                                                    plugin.getLogger().info("Got " + updatedHomes.size() + " homes");
-                                                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                                                        // Fermer l'interface AnvilGUI
-                                                        state.getPlayer().closeInventory();
-                                                        // Rouvrir le menu avec les données à jour
-                                                        NewListMenu.create(plugin, updatedHomes, owner).show(user);
-                                                    });
-                                                }).exceptionally(e -> {
-                                                    plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list", e);
-                                                    return null;
-                                                });
-                                            }, 10L); // Délai de 10 ticks (0.5 seconde)
-                                            
-                                            return actions;
-                                        } catch (ValidationException e) {
-                                            return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(plugin.getLocales().getLocale("error_invalid_name")));
                                         }
+                                        String homeName = inputText.replace(' ', '_');
+                                        plugin.getLogger().info("Attempting to create home with formatted name: " + homeName);
+                                        api.createHome(owner, homeName, user.getPosition());
+                                        plugin.getLogger().info("Home creation successful");
+                                        
+                                        // Afficher un message de chargement
+                                        List<AnvilGUI.ResponseAction> actions = Collections.singletonList(
+                                            AnvilGUI.ResponseAction.replaceInputText("Création en cours...")
+                                        );
+                                        
+                                        // Attendre un court instant pour la synchronisation
+                                        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                                            plugin.getLogger().info("Fetching updated homes list");
+                                            api.getUserHomes(owner).thenAccept(updatedHomes -> {
+                                                plugin.getLogger().info("Got " + updatedHomes.size() + " homes");
+                                                plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                                    // Fermer l'interface AnvilGUI
+                                                    state.getPlayer().closeInventory();
+                                                    // Rouvrir le menu avec les données à jour
+                                                    NewListMenu.create(plugin, updatedHomes, owner).show(user);
+                                                });
+                                            }).exceptionally(e -> {
+                                                plugin.getLogger().log(Level.SEVERE, "Failed to refresh homes list", e);
+                                                return null;
+                                            });
+                                        }, 10L); // Délai de 10 ticks (0.5 seconde)
+                                        
+                                        return actions;
+                                    } catch (ValidationException e) {
+                                        return Collections.singletonList(AnvilGUI.ResponseAction.replaceInputText(plugin.getLocales().getLocale("error_invalid_name")));
                                     }
-                                    return Collections.emptyList();
-                                })
-                                .open(player);
-                    }
-                    return true;
-                },
-                plugin.getLocales().getLocale("add_home_button")
-        );
+                                }
+                                return Collections.emptyList();
+                            })
+                            .open(player);
+                }
+                return true;
+            });
+        });
     }
 
     private GuiElement createHomeCountElement() {
