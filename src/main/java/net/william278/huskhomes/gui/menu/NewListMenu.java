@@ -82,13 +82,16 @@ public class NewListMenu extends Menu {
         for (int i = 0; i < rows - 1; i++) {
             layout[i] = "hhhhhhhhh";
         }
-        layout[rows - 1] = "<maosf>";
+        layout[rows - 1] = "<maos>f";
+        plugin.getLogger().info("Menu layout: " + Arrays.toString(layout));
         return layout;
     }
 
     @Override
     protected Consumer<InventoryGui> buildMenu() {
         return (menu) -> {
+            plugin.getLogger().info("Building menu with mode: " + mode);
+            
             if (mode == MenuMode.DELETE) {
                 menu.setFiller(new ItemStack(plugin.getSettings().getDeleteFillerItem()));
             } else {
@@ -104,16 +107,22 @@ public class NewListMenu extends Menu {
             homes.forEach(home -> homeGroup.addElement(createHomeButton(home)));
             menu.addElement(homeGroup);
 
+            // Navigation buttons
             menu.addElement(new GuiPageElement('<', new ItemStack(plugin.getSettings().getPaginatePreviousPage()), GuiPageElement.PageAction.PREVIOUS, plugin.getLocales().getLocale("pagination_previous_page")));
             menu.addElement(new GuiPageElement('>', new ItemStack(plugin.getSettings().getPaginateNextPage()), GuiPageElement.PageAction.NEXT, plugin.getLocales().getLocale("pagination_next_page")));
 
+            // Action buttons
             menu.addElement(createTeleportButton());
             menu.addElement(createDeleteButton());
             menu.addElement(createSortButton());
             if (addHomeButton) {
                 menu.addElement(createAddButton());
             }
-            menu.setElement(50, createHomeCountElement());
+
+            // Home count display
+            menu.addElement(createHomeCountElement());
+
+            plugin.getLogger().info("Menu built successfully");
         };
     }
 
